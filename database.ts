@@ -39,6 +39,11 @@ export interface Contact {
   priority: 'low' | 'medium' | 'high'
   createdAt: Date
   source?: string
+  // Selfie/Photo data
+  photoPath?: string
+  photoFileId?: string
+  photoTakenAt?: Date
+  hasFacialData?: boolean
 }
 
 // Initialize database tables
@@ -67,7 +72,11 @@ export async function initializeDatabase() {
         tags TEXT[],
         priority VARCHAR(50) NOT NULL DEFAULT 'medium',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        source VARCHAR(255)
+        source VARCHAR(255),
+        photo_path VARCHAR(500),
+        photo_file_id VARCHAR(500),
+        photo_taken_at TIMESTAMP WITH TIME ZONE,
+        has_facial_data BOOLEAN DEFAULT FALSE
       )
     `)
 
@@ -115,16 +124,21 @@ export class DatabaseContactManager {
         tags: contactData.tags || [],
         priority: contactData.priority || 'medium',
         createdAt: new Date(),
-        source: contactData.source
+        source: contactData.source,
+        photoPath: contactData.photoPath,
+        photoFileId: contactData.photoFileId,
+        photoTakenAt: contactData.photoTakenAt,
+        hasFacialData: contactData.hasFacialData || false
       }
 
       const query = `
         INSERT INTO contacts (
           id, user_id, name, position, company, email, phone, 
           linkedin, github, telegram, lens, farcaster, ens, 
-          location, goal, notes, tags, priority, created_at, source
+          location, goal, notes, tags, priority, created_at, source,
+          photo_path, photo_file_id, photo_taken_at, has_facial_data
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
         ) RETURNING *
       `
 
@@ -132,7 +146,8 @@ export class DatabaseContactManager {
         contact.id, contact.userId, contact.name, contact.position, contact.company,
         contact.email, contact.phone, contact.linkedin, contact.github, contact.telegram,
         contact.lens, contact.farcaster, contact.ens, contact.location, contact.goal,
-        contact.notes, contact.tags, contact.priority, contact.createdAt, contact.source
+        contact.notes, contact.tags, contact.priority, contact.createdAt, contact.source,
+        contact.photoPath, contact.photoFileId, contact.photoTakenAt, contact.hasFacialData
       ]
 
       const result = await client.query(query, values)
@@ -236,6 +251,58 @@ export class DatabaseContactManager {
     }
   }
 
+  // Add photo to existing contact
+  async addPhotoToContact(userId: string, contactId: string, photoData: {
+    photoPath?: string,
+    photoFileId?: string,
+    photoTakenAt?: Date,
+    hasFacialData?: boolean
+  }): Promise<boolean> {
+    const client = await pool.connect()
+    try {
+      const query = `
+        UPDATE contacts 
+        SET photo_path = $1, photo_file_id = $2, photo_taken_at = $3, has_facial_data = $4
+        WHERE user_id = $5 AND id = $6
+      `
+      const values = [
+        photoData.photoPath, 
+        photoData.photoFileId, 
+        photoData.photoTakenAt || new Date(), 
+        photoData.hasFacialData || false,
+        userId, 
+        contactId
+      ]
+      
+      const result = await client.query(query, values)
+      return result.rowCount > 0
+    } catch (error) {
+      console.error('❌ Add photo error:', error)
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
+  // Get contacts with photos
+  async getContactsWithPhotos(userId: string): Promise<Contact[]> {
+    const client = await pool.connect()
+    try {
+      const query = `
+        SELECT * FROM contacts 
+        WHERE user_id = $1 AND (photo_path IS NOT NULL OR photo_file_id IS NOT NULL)
+        ORDER BY photo_taken_at DESC
+      `
+      const result = await client.query(query, [userId])
+      return result.rows.map(row => this.mapRowToContact(row))
+    } catch (error) {
+      console.error('❌ Get photos error:', error)
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
   // Helper function to map database row to Contact object
   private mapRowToContact(row: any): Contact {
     return {
@@ -258,7 +325,11 @@ export class DatabaseContactManager {
       tags: row.tags || [],
       priority: row.priority,
       createdAt: new Date(row.created_at),
-      source: row.source
+      source: row.source,
+      photoPath: row.photo_path,
+      photoFileId: row.photo_file_id,
+      photoTakenAt: row.photo_taken_at ? new Date(row.photo_taken_at) : undefined,
+      hasFacialData: row.has_facial_data || false
     }
   }
 }

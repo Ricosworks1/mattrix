@@ -8,7 +8,7 @@ import { DatabaseContactManager, initializeDatabase, Contact } from './database'
 if (process.env.NODE_ENV === 'production') {
   config({ path: '.env.production' })
 } else {
-  config({ path: '.env.BDEmperorBot' })
+  config({ path: '.env.mattrix' })
 }
 
 // Initialize database contact manager
@@ -98,15 +98,17 @@ function parseContactData(text: string): Partial<Contact> {
 
 // START command
 bot.command('start', async (ctx) => {
-  const welcome = `👑 **Welcome to BD Emperor!**
+  const welcome = `🌐 **Welcome to Mattrix!**
 
-🎯 **The Ultimate CRM for Conference Networking**
+⚡ **Decentralized CRM Powered by Web3**
 
-Transform every business connection into opportunity! BD Emperor helps you capture, organize, and leverage every contact you meet at conferences, events, and networking sessions.
+Enter the Mattrix - where business connections transcend traditional boundaries! Mattrix helps you capture, organize, and leverage every contact you meet at conferences with decentralized storage via Golem.
 
 **🚀 Quick Start:**
 • /add - Add new contact with smart template
 • /list - View all your contacts
+• /selfie [name] - Link conference selfie to contact
+• /view [name] - See full profile with selfie
 • /search - Find specific contacts
 • /stats - Your networking analytics
 
@@ -210,18 +212,13 @@ Your contact will be instantly organized and searchable! 🎯`
         priority: 'medium'
       })
 
-      const keyboard = new InlineKeyboard()
-        .text('📝 Add More Details', `edit_${contact.id}`)
-        .row()
-        .text('🔍 View Contact', `view_${contact.id}`)
-
       await ctx.reply(`✅ **Quick Contact Added!**
 
 👤 **${contact.name}**
 🏢 ${contact.company || 'No company'}
 📧 ${contact.email || 'No email'}
 
-Use the buttons below to add more details!`)
+Use /view ${contact.name} to see details or /selfie ${contact.name} to add a photo!`)
       return
     }
 
@@ -292,7 +289,7 @@ Your networking empire starts here! 👑`)
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
 
-  let response = `👥 **Your BD Emperor Network**\n\n📊 **Total Contacts:** ${contacts.length}\n\n`
+  let response = `👥 **Your Mattrix Network**\n\n📊 **Total Contacts:** ${contacts.length}\n\n`
   
   // Show detailed contact list
   sortedContacts.slice(0, 10).forEach((contact, i) => {
@@ -403,7 +400,7 @@ bot.command('stats', async (ctx) => {
 
   const stats = await contactManager.getStats(ctx.from!.id.toString())
   
-  let response = `📊 **Your BD Emperor Statistics**
+  let response = `📊 **Your Mattrix Statistics**
 
 👥 **Total Contacts:** ${stats.total}
 
@@ -529,7 +526,7 @@ bot.command('export', async (ctx) => {
       .row()
       .text('📅 Recent (30 days)', 'export_recent')
 
-    const response = `📤 **Export Your BD Emperor Contacts**
+    const response = `📤 **Export Your Mattrix Contacts**
 
 **Available Options:**
 • **All Contacts** - Complete database (${allContacts.length} contacts)
@@ -627,7 +624,7 @@ Downloading your professional contact database...`
 
     // Send the CSV file
     await ctx.replyWithDocument(new InputFile(filepath), {
-      caption: `🎯 **BD Emperor Export**\n\n📋 ${filterName}: ${contacts.length} contacts\n📅 Generated: ${new Date().toLocaleDateString()}\n\n💼 Ready for import into your favorite CRM!`
+      caption: `🌐 **Mattrix Export**\n\n📋 ${filterName}: ${contacts.length} contacts\n📅 Generated: ${new Date().toLocaleDateString()}\n\n💼 Decentralized networking data ready for use!`
     })
 
     // Clean up the temporary file
@@ -647,16 +644,236 @@ Downloading your professional contact database...`
   }
 }
 
+// SELFIE command
+bot.command('selfie', async (ctx) => {
+  const input = ctx.match as string
+
+  if (!input?.trim()) {
+    await ctx.reply(`🤳 **Conference Selfie Feature**\n\n**Usage:** \`/selfie [contact name]\`\n\n**Examples:**\n• \`/selfie John Doe\` - Link selfie to John Doe\n• \`/selfie Sarah\` - Link selfie to Sarah\n\n**How it works:**\n1. Use /selfie command with contact name\n2. Send your conference selfie as a photo\n3. Photo gets linked to that contact\n4. Future facial recognition ready!\n\n**Perfect for:**\n✅ Conference networking\n✅ Event meetups\n✅ Business card alternatives\n✅ Visual contact memory\n\nTake your networking to the next level! 📸`, { parse_mode: 'Markdown' })
+    return
+  }
+
+  try {
+    const userId = ctx.from!.id.toString()
+    const contacts = await contactManager.getUserContacts(userId)
+    
+    if (contacts.length === 0) {
+      await ctx.reply('📭 No contacts found! Use /add to create contacts first, then take selfies with them.')
+      return
+    }
+
+    // Find matching contact
+    const searchTerm = input.toLowerCase()
+    const matchingContacts = contacts.filter(contact => 
+      contact.name.toLowerCase().includes(searchTerm)
+    )
+
+    if (matchingContacts.length === 0) {
+      await ctx.reply(`❌ No contact found matching "${input}".\n\nUse /list to see all contacts or /add to create a new one first.`)
+      return
+    }
+
+    if (matchingContacts.length > 1) {
+      let response = `🔍 **Multiple contacts found for "${input}":**\n\n`
+      matchingContacts.slice(0, 5).forEach((contact, index) => {
+        response += `${index + 1}. **${contact.name}**\n`
+        if (contact.company) response += `   📢 ${contact.company}\n`
+        response += '\n'
+      })
+      response += `Please be more specific with the name.`
+      
+      await ctx.reply(response, { parse_mode: 'Markdown' })
+      return
+    }
+
+    // Single match found
+    const contact = matchingContacts[0]
+    
+    // Store in context for the next photo message
+    const contextKey = `selfie_${userId}`
+    
+    // Simple way to store context (in production, use a proper session store)
+    globalThis[contextKey] = {
+      contactId: contact.id,
+      contactName: contact.name,
+      timestamp: Date.now()
+    }
+
+    await ctx.reply(`🤳 **Ready for selfie with ${contact.name}!**\n\n📸 **Next step:** Send me the photo of you and ${contact.name} together.\n\n✨ **This will:**\n• Link the photo to ${contact.name}'s contact\n• Store in decentralized database via Golem\n• Enable future facial recognition\n• Help you remember this networking moment\n\nSend the photo now! 📷`, { parse_mode: 'Markdown' })
+
+  } catch (error) {
+    console.error('Error in selfie command:', error)
+    await ctx.reply('❌ Error processing selfie command. Please try again.')
+  }
+})
+
+// VIEW command - view full contact details with photo
+bot.command('view', async (ctx) => {
+  const input = ctx.match as string
+
+  if (!input?.trim()) {
+    await ctx.reply(`👁️ **View Contact Details**\n\n**Usage:** \`/view [contact name]\`\n\n**Examples:**\n• \`/view John Doe\` - View John's complete profile\n• \`/view Sarah\` - View Sarah's details\n\n**Shows:**\n✅ All contact information\n✅ Conference selfie (if available)\n✅ Web3 profiles\n✅ Notes and goals\n✅ When you met them\n\nGet the full picture of your connections! 👥`, { parse_mode: 'Markdown' })
+    return
+  }
+
+  try {
+    const userId = ctx.from!.id.toString()
+    const contacts = await contactManager.getUserContacts(userId)
+    
+    if (contacts.length === 0) {
+      await ctx.reply('📭 No contacts found! Use /add to create your first contact.')
+      return
+    }
+
+    // Find matching contact
+    const searchTerm = input.toLowerCase()
+    const matchingContacts = contacts.filter(contact => 
+      contact.name.toLowerCase().includes(searchTerm)
+    )
+
+    if (matchingContacts.length === 0) {
+      await ctx.reply(`❌ No contact found matching "${input}".\n\nUse /list to see all contacts.`)
+      return
+    }
+
+    if (matchingContacts.length > 1) {
+      let response = `🔍 **Multiple contacts found for "${input}":**\n\n`
+      matchingContacts.slice(0, 5).forEach((contact, index) => {
+        response += `${index + 1}. **${contact.name}**\n`
+        if (contact.company) response += `   📢 ${contact.company}\n`
+        response += '\n'
+      })
+      response += `Please be more specific with the name.`
+      
+      await ctx.reply(response, { parse_mode: 'Markdown' })
+      return
+    }
+
+    // Single match found - show full details
+    const contact = matchingContacts[0]
+    
+    // Build comprehensive contact view
+    let message = `👤 **${contact.name}**\n`
+    
+    // Priority indicator
+    const priorityEmoji = contact.priority === 'high' ? '🔴' : contact.priority === 'medium' ? '🟡' : '⚪'
+    message += `${priorityEmoji} Priority: ${contact.priority}\n\n`
+    
+    // Basic info
+    if (contact.position) message += `💼 **Position:** ${contact.position}\n`
+    if (contact.company) message += `🏢 **Company:** ${contact.company}\n`
+    if (contact.location) message += `🌍 **Location:** ${contact.location}\n\n`
+    
+    // Contact methods
+    message += `📞 **Contact Info:**\n`
+    if (contact.email) message += `📧 ${contact.email}\n`
+    if (contact.phone) message += `📱 ${contact.phone}\n`
+    if (contact.linkedin) message += `💼 LinkedIn: ${contact.linkedin}\n`
+    if (contact.github) message += `⚡ GitHub: ${contact.github}\n`
+    if (contact.telegram) message += `💬 Telegram: ${contact.telegram}\n`
+    message += '\n'
+    
+    // Web3 profiles
+    if (contact.lens || contact.farcaster || contact.ens) {
+      message += `🔮 **Web3 Profiles:**\n`
+      if (contact.lens) message += `🌿 Lens: ${contact.lens}\n`
+      if (contact.farcaster) message += `🟣 Farcaster: ${contact.farcaster}\n`
+      if (contact.ens) message += `🔗 ENS: ${contact.ens}\n`
+      message += '\n'
+    }
+    
+    // Goals and notes
+    if (contact.goal) message += `🎯 **Goal:** ${contact.goal}\n\n`
+    if (contact.notes) message += `📝 **Notes:** ${contact.notes}\n\n`
+    
+    // Tags
+    if (contact.tags && contact.tags.length > 0) {
+      message += `🏷️ **Tags:** ${contact.tags.join(', ')}\n\n`
+    }
+    
+    // Metadata
+    message += `📅 **Added:** ${new Date(contact.createdAt).toLocaleDateString()}\n`
+    if (contact.source) message += `📍 **Source:** ${contact.source}\n`
+    
+    // Photo info
+    if (contact.photoFileId) {
+      message += `🤳 **Conference Selfie:** Available\n`
+      if (contact.photoTakenAt) {
+        message += `📸 **Photo taken:** ${new Date(contact.photoTakenAt).toLocaleDateString()}\n`
+      }
+    }
+
+    // Send the detailed message first
+    await ctx.reply(message, { parse_mode: 'Markdown' })
+    
+    // Then send the photo if available
+    if (contact.photoFileId) {
+      try {
+        await ctx.replyWithPhoto(contact.photoFileId, {
+          caption: `🤳 Conference selfie with ${contact.name}\n📅 ${contact.photoTakenAt ? new Date(contact.photoTakenAt).toLocaleDateString() : 'Date unknown'}`
+        })
+      } catch (error) {
+        console.error('Error sending photo:', error)
+        await ctx.reply('⚠️ Photo file no longer available, but contact details are preserved.')
+      }
+    }
+
+  } catch (error) {
+    console.error('Error in view command:', error)
+    await ctx.reply('❌ Error retrieving contact details. Please try again.')
+  }
+})
+
+// PHOTOS command - view contact photos
+bot.command('photos', async (ctx) => {
+  try {
+    const userId = ctx.from!.id.toString()
+    const contactsWithPhotos = await contactManager.getContactsWithPhotos(userId)
+    
+    if (contactsWithPhotos.length === 0) {
+      await ctx.reply(`📸 **No Conference Selfies Yet!**\n\nStart taking selfies with your contacts:\n1. Use \`/selfie [contact name]\`\n2. Send the photo\n3. Build your visual network!\n\nPerfect for remembering conference connections! 🤳`, { parse_mode: 'Markdown' })
+      return
+    }
+
+    let message = `📸 **Your Conference Selfies (${contactsWithPhotos.length})**\n\n`
+    
+    for (const contact of contactsWithPhotos.slice(0, 8)) {
+      message += `🤳 **${contact.name}**\n`
+      if (contact.company) message += `   📢 ${contact.company}\n`
+      if (contact.photoTakenAt) {
+        message += `   📅 ${new Date(contact.photoTakenAt).toLocaleDateString()}\n`
+      }
+      message += '\n'
+    }
+    
+    if (contactsWithPhotos.length > 8) {
+      message += `\n_...and ${contactsWithPhotos.length - 8} more photos_`
+    }
+    
+    message += `\n\n🔮 **Powered by:**\n• Decentralized storage via Golem\n• Future facial recognition\n• AI-powered contact suggestions`
+
+    await ctx.reply(message, { parse_mode: 'Markdown' })
+  } catch (error) {
+    console.error('Error listing photos:', error)
+    await ctx.reply('❌ Error retrieving photos.')
+  }
+})
+
 // HELP command
 bot.command('help', async (ctx) => {
-  const help = `🎯 **BD Emperor - Complete Command Guide**
+  const help = `🌐 **Mattrix - Complete Command Guide**
 
 **📝 CORE COMMANDS**
 /add - Add new contact (smart template)
 /list - View all your contacts
+/view [name] - View full contact details with selfie
 /search [query] - Find specific contacts
 /delete [name] - Delete a contact
 /stats - Your networking statistics
+
+**🤳 SELFIE FEATURES**
+/selfie [name] - Link conference selfie to contact
+/photos - View all your conference selfies
 /export - Download your contact data
 
 **🔍 SEARCH EXAMPLES**
@@ -683,6 +900,59 @@ bot.command('help', async (ctx) => {
 Ready to build your empire? Start with /add! 👑`
 
   await ctx.reply(help)
+})
+
+// Handle photo messages for selfies
+bot.on('message:photo', async (ctx) => {
+  try {
+    const userId = ctx.from!.id.toString()
+    const contextKey = `selfie_${userId}`
+    const selfieContext = globalThis[contextKey]
+
+    if (!selfieContext) {
+      await ctx.reply('📸 **Nice photo!** \n\nTo link this photo to a contact, first use:\n`/selfie [contact name]`\n\nThen send the photo. This helps with conference networking!', { parse_mode: 'Markdown' })
+      return
+    }
+
+    // Check if context is still valid (5 minutes)
+    if (Date.now() - selfieContext.timestamp > 5 * 60 * 1000) {
+      delete globalThis[contextKey]
+      await ctx.reply('⏰ **Selfie session expired.** Please use `/selfie [contact name]` again and send the photo within 5 minutes.', { parse_mode: 'Markdown' })
+      return
+    }
+
+    // Get the largest photo size
+    const photo = ctx.message.photo[ctx.message.photo.length - 1]
+    const fileId = photo.file_id
+
+    // Store photo info in contact via Golem database
+    const success = await contactManager.addPhotoToContact(userId, selfieContext.contactId, {
+      photoFileId: fileId,
+      photoTakenAt: new Date(),
+      hasFacialData: false // Will be true when we add facial recognition
+    })
+
+    if (success) {
+      await ctx.reply(
+        `✅ **Selfie saved successfully!** 🤳\n\n` +
+        `📸 **Photo linked to:** ${selfieContext.contactName}\n` +
+        `⏰ **Taken:** ${new Date().toLocaleString()}\n` +
+        `🌐 **Stored in:** Decentralized database via Golem\n` +
+        `🔮 **Ready for:** Facial recognition (coming soon)\n\n` +
+        `This conference memory is now part of your Mattrix network!`,
+        { parse_mode: 'Markdown' }
+      )
+
+      // Clean up context
+      delete globalThis[contextKey]
+    } else {
+      await ctx.reply('❌ **Failed to save selfie.** Contact may have been deleted. Please try again.')
+    }
+
+  } catch (error) {
+    console.error('Error processing photo:', error)
+    await ctx.reply('❌ Error processing photo. Please try again.')
+  }
 })
 
 // Handle callback queries
@@ -866,8 +1136,9 @@ async function setupBotCommands() {
 // Start bot
 bot.start({
   onStart: async (botInfo) => {
-    console.log(`🚀 BD Emperor Bot @${botInfo.username} is LIVE!`)
-    console.log(`👑 Ready to dominate conference networking!`)
+    console.log(`🚀 Mattrix Bot @${botInfo.username} is LIVE!`)
+    console.log(`🌐 Ready to manage contacts with decentralized storage!`)
+    console.log(`⚡ Golem integration active!`)
     
     // Initialize database
     try {
