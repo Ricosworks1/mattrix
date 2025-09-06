@@ -985,8 +985,8 @@ Ready to build your empire? Start with /add! 👑`
   await ctx.reply(help)
 })
 
-// BASE BUILDER NETWORK INPUT FORM command
-bot.command('basebuildernetworkinputform', async (ctx) => {
+// BASE BUILDERS NETWORK command
+bot.command('base_builders_network', async (ctx) => {
   const input = ctx.match as string
 
   if (!input?.trim()) {
@@ -1000,7 +1000,7 @@ Please use this form to introduce yourself and help us onboard you into the netw
 
 We'll then reach out with next steps.
 
-**📋 Copy this template, fill it out, and send "/basebuildernetworkinputform [your data]":**
+**📋 Copy this template, fill it out, and send "/base_builders_network [your data]":**
 
 \`\`\`
 Email (required): 
@@ -1025,7 +1025,7 @@ Additional Comments:
 **💡 How to use:**
 1. Copy the template above
 2. Replace each field with your information  
-3. Type "/basebuildernetworkinputform" and paste your filled template
+3. Type "/base_builders_network" and paste your filled template
 4. Hit send!
 
 **Example:**
@@ -1060,7 +1060,7 @@ Please ensure you provide:
 • Location (required)
 • Country (required)
 
-Use /basebuildernetworkinputform to see the template again.`)
+Use /base_builders_network to see the template again.`)
       return
     }
 
@@ -1119,7 +1119,7 @@ Thank you for being part of the Base ecosystem! 🔵`
 
 There was an issue processing your application. Please check your format and try again.
 
-Use /basebuildernetworkinputform to see the template.
+Use /base_builders_network to see the template.
 
 **Common Issues:**
 • Make sure to include colons (:) after field names
@@ -1354,7 +1354,7 @@ async function setupBotCommands() {
       { command: 'export', description: '📤 Download contact data' },
       { command: 'selfie', description: '📸 Take selfie with contact' },
       { command: 'photos', description: '🖼️ View contact photos' },
-      { command: 'basebuildernetworkinputform', description: '🔵 Base Builder Network form' },
+      { command: 'base_builders_network', description: '🔵 Base Builders Network' },
       { command: 'help', description: '❓ Command guide' }
     ])
     console.log('✅ Bot commands updated successfully!')
