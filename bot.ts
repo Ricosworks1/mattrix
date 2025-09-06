@@ -1122,9 +1122,12 @@ async function setupBotCommands() {
       { command: 'add', description: '➕ Add new contact' },
       { command: 'list', description: '👥 View all contacts' },
       { command: 'search', description: '🔍 Find contacts' },
+      { command: 'view', description: '👤 View contact details' },
       { command: 'delete', description: '🗑️ Remove contact' },
       { command: 'stats', description: '📊 Networking statistics' },
       { command: 'export', description: '📤 Download contact data' },
+      { command: 'selfie', description: '📸 Take selfie with contact' },
+      { command: 'photos', description: '🖼️ View contact photos' },
       { command: 'help', description: '❓ Command guide' }
     ])
     console.log('✅ Bot commands updated successfully!')
