@@ -1,0 +1,21 @@
+{
+  "name": "mattrix",
+  "version": "1.0.0",
+  "description": "Mattrix - Decentralized Business Development CRM Bot powered by Golem",
+  "main": "bot.ts",
+  "scripts": {
+    "start": "bun bot.ts",
+    "dev": "bun --watch bot.ts",
+    "test-connection": "bun test-connection.ts"
+  },
+  "dependencies": {
+    "grammy": "^1.25.0",
+    "dotenv": "^16.4.5",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.10.9",
+    "typescript": "^5.5.0"
+  }
+}
