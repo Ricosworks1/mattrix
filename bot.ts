@@ -2,6 +2,7 @@ import { config } from 'dotenv'
 import { Bot, Context, InlineKeyboard, InputFile } from 'grammy'
 import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { join } from 'path'
+import crypto from 'crypto'
 import express from 'express'
 import cors from 'cors'
 import { hybridStorage, initializeDatabase, Contact, BaseBuilder } from './hybrid-storage'
@@ -1662,6 +1663,39 @@ function startAPIServer() {
     } catch (error) {
       console.error('API Error:', error)
       res.status(500).json({ success: false, error: 'Failed to get stats' })
+    }
+  })
+
+  app.post('/api/base-builders', async (req, res) => {
+    try {
+      const { userId, email, fullName, builderTypes, buildingOnBase, location, country, baseAmbassador, discordUsername, telegramUsername, twitterUsername, walletAddress } = req.body
+      
+      if (!email || !fullName || !builderTypes || !buildingOnBase || !location || !country || !baseAmbassador) {
+        return res.status(400).json({ success: false, error: 'Required fields missing' })
+      }
+
+      const baseBuilderData: BaseBuilder = {
+        id: crypto.randomUUID(),
+        userId,
+        email,
+        fullName,
+        builderTypes: typeof builderTypes === 'string' ? [builderTypes] : builderTypes,
+        buildingOnBase,
+        location,
+        country,
+        baseAmbassador,
+        discordUsername: discordUsername || '',
+        telegramUsername: telegramUsername || '',
+        twitterUsername: twitterUsername || '',
+        walletAddress: walletAddress || '',
+        createdAt: new Date().toISOString()
+      }
+
+      const result = await baseBuilderManager.addBaseBuilder(baseBuilderData)
+      res.json({ success: true, data: result })
+    } catch (error) {
+      console.error('API Error:', error)
+      res.status(500).json({ success: false, error: 'Failed to submit Base Builder application' })
     }
   })
 
