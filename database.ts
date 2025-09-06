@@ -56,6 +56,30 @@ export interface Contact {
   hasFacialData?: boolean
 }
 
+// Base Builder Network interface
+export interface BaseBuilder {
+  id: string
+  userId: string
+  email: string
+  fullName: string
+  builderTypes: string[]
+  buildingOnBase: 'Yes' | 'No, but I would like to get involved'
+  location: string
+  country: string
+  baseAmbassador: 'Yes' | 'No'
+  discordUsername?: string
+  telegramUsername?: string
+  twitterUsername?: string
+  baseAppUsername?: string
+  githubLink?: string
+  relevantLinks?: string
+  baseCoreContact?: string
+  basename?: string
+  walletAddress?: string
+  additionalComments?: string
+  createdAt: Date
+}
+
 // Initialize database tables
 export async function initializeDatabase() {
   const client = await pool.connect()
@@ -90,6 +114,32 @@ export async function initializeDatabase() {
       )
     `)
 
+    // Create base_builders table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS base_builders (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        full_name VARCHAR(255) NOT NULL,
+        builder_types TEXT[] NOT NULL,
+        building_on_base VARCHAR(50) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        country VARCHAR(255) NOT NULL,
+        base_ambassador VARCHAR(10) NOT NULL,
+        discord_username VARCHAR(255),
+        telegram_username VARCHAR(255),
+        twitter_username VARCHAR(255),
+        base_app_username VARCHAR(255),
+        github_link VARCHAR(500),
+        relevant_links TEXT,
+        base_core_contact VARCHAR(500),
+        basename VARCHAR(255),
+        wallet_address VARCHAR(255),
+        additional_comments TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `)
+
     // Create indexes for better performance
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON contacts(user_id);
@@ -97,6 +147,9 @@ export async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_contacts_created_at ON contacts(created_at);
       CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(name);
       CREATE INDEX IF NOT EXISTS idx_contacts_company ON contacts(company);
+      CREATE INDEX IF NOT EXISTS idx_base_builders_user_id ON base_builders(user_id);
+      CREATE INDEX IF NOT EXISTS idx_base_builders_email ON base_builders(email);
+      CREATE INDEX IF NOT EXISTS idx_base_builders_location ON base_builders(location);
     `)
 
     console.log('✅ Database initialized successfully!')
@@ -340,6 +393,87 @@ export class DatabaseContactManager {
       photoFileId: row.photo_file_id,
       photoTakenAt: row.photo_taken_at ? new Date(row.photo_taken_at) : undefined,
       hasFacialData: row.has_facial_data || false
+    }
+  }
+}
+
+// Base Builder Network Manager
+export class BaseBuilderManager {
+  // Create base builder entry
+  async createBaseBuilder(userId: string, builderData: Omit<BaseBuilder, 'id' | 'userId' | 'createdAt'>): Promise<BaseBuilder> {
+    const client = await pool.connect()
+    try {
+      const id = `bb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      const query = `
+        INSERT INTO base_builders (
+          id, user_id, email, full_name, builder_types, building_on_base,
+          location, country, base_ambassador, discord_username, telegram_username,
+          twitter_username, base_app_username, github_link, relevant_links,
+          base_core_contact, basename, wallet_address, additional_comments
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        RETURNING *
+      `
+      
+      const values = [
+        id, userId, builderData.email, builderData.fullName,
+        builderData.builderTypes, builderData.buildingOnBase,
+        builderData.location, builderData.country, builderData.baseAmbassador,
+        builderData.discordUsername, builderData.telegramUsername,
+        builderData.twitterUsername, builderData.baseAppUsername,
+        builderData.githubLink, builderData.relevantLinks,
+        builderData.baseCoreContact, builderData.basename,
+        builderData.walletAddress, builderData.additionalComments
+      ]
+      
+      const result = await client.query(query, values)
+      return this.mapRowToBaseBuilder(result.rows[0])
+    } catch (error) {
+      console.error('❌ Create base builder error:', error)
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
+  // Get base builder by user ID
+  async getBaseBuilderByUserId(userId: string): Promise<BaseBuilder | null> {
+    const client = await pool.connect()
+    try {
+      const query = 'SELECT * FROM base_builders WHERE user_id = $1'
+      const result = await client.query(query, [userId])
+      return result.rows.length > 0 ? this.mapRowToBaseBuilder(result.rows[0]) : null
+    } catch (error) {
+      console.error('❌ Get base builder error:', error)
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
+  // Helper function to map database row to BaseBuilder object
+  private mapRowToBaseBuilder(row: any): BaseBuilder {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      email: row.email,
+      fullName: row.full_name,
+      builderTypes: row.builder_types || [],
+      buildingOnBase: row.building_on_base,
+      location: row.location,
+      country: row.country,
+      baseAmbassador: row.base_ambassador,
+      discordUsername: row.discord_username,
+      telegramUsername: row.telegram_username,
+      twitterUsername: row.twitter_username,
+      baseAppUsername: row.base_app_username,
+      githubLink: row.github_link,
+      relevantLinks: row.relevant_links,
+      baseCoreContact: row.base_core_contact,
+      basename: row.basename,
+      walletAddress: row.wallet_address,
+      additionalComments: row.additional_comments,
+      createdAt: new Date(row.created_at)
     }
   }
 }

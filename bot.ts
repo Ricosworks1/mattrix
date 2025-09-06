@@ -2,7 +2,7 @@ import { config } from 'dotenv'
 import { Bot, Context, InlineKeyboard, InputFile } from 'grammy'
 import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { DatabaseContactManager, initializeDatabase, Contact } from './database'
+import { DatabaseContactManager, BaseBuilderManager, initializeDatabase, Contact, BaseBuilder } from './database'
 
 // Load environment
 if (process.env.NODE_ENV === 'production') {
@@ -11,8 +11,9 @@ if (process.env.NODE_ENV === 'production') {
   config({ path: '.env.mattrix' })
 }
 
-// Initialize database contact manager
+// Initialize database managers
 const contactManager = new DatabaseContactManager()
+const baseBuilderManager = new BaseBuilderManager()
 const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!)
 
 // Helper function to parse contact data from template
@@ -94,6 +95,88 @@ function parseContactData(text: string): Partial<Contact> {
   }
 
   return contact
+}
+
+// Helper function to parse Base Builder form data
+function parseBaseBuilderData(text: string): Partial<BaseBuilder> {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line)
+  const builder: Partial<BaseBuilder> = {}
+
+  for (const line of lines) {
+    const [key, ...valueParts] = line.split(':')
+    if (key && valueParts.length > 0) {
+      const value = valueParts.join(':').trim()
+      const lowerKey = key.toLowerCase().trim()
+
+      switch (lowerKey) {
+        case 'email':
+          builder.email = value
+          break
+        case 'full name':
+        case 'name':
+          builder.fullName = value
+          break
+        case 'builder types':
+        case 'builder type':
+          builder.builderTypes = value.split(',').map(t => t.trim()).filter(t => t)
+          break
+        case 'building on base':
+        case 'building on base (required)':
+          builder.buildingOnBase = value as 'Yes' | 'No, but I would like to get involved'
+          break
+        case 'location':
+          builder.location = value
+          break
+        case 'country':
+          builder.country = value
+          break
+        case 'base ambassador interest':
+        case 'base ambassador':
+          builder.baseAmbassador = value as 'Yes' | 'No'
+          break
+        case 'discord username':
+        case 'discord':
+          builder.discordUsername = value
+          break
+        case 'telegram username':
+        case 'telegram':
+          builder.telegramUsername = value
+          break
+        case 'twitter (x) username':
+        case 'twitter username':
+        case 'twitter':
+          builder.twitterUsername = value
+          break
+        case 'base app/farcaster username':
+        case 'base app username':
+        case 'farcaster username':
+          builder.baseAppUsername = value
+          break
+        case 'github link':
+        case 'github':
+          builder.githubLink = value
+          break
+        case 'relevant links':
+          builder.relevantLinks = value
+          break
+        case 'base core team contact':
+        case 'base core contact':
+          builder.baseCoreContact = value
+          break
+        case 'basename':
+          builder.basename = value
+          break
+        case 'wallet address':
+          builder.walletAddress = value
+          break
+        case 'additional comments':
+          builder.additionalComments = value
+          break
+      }
+    }
+  }
+
+  return builder
 }
 
 // START command
@@ -902,6 +985,149 @@ Ready to build your empire? Start with /add! 👑`
   await ctx.reply(help)
 })
 
+// BASE BUILDER NETWORK INPUT FORM command
+bot.command('basebuildernetworkinputform', async (ctx) => {
+  const input = ctx.match as string
+
+  if (!input?.trim()) {
+    const template = `🚀 **Base Builder Network Intake Form**
+
+🌐 The Builder Network is a global community of builders on Base. Being a builder can take many forms, including: founder, developer, creator and community organiser.
+
+Being an active member of the network grants you access to specific community forums, programs and support.
+
+Please use this form to introduce yourself and help us onboard you into the network. If a question doesn't apply, you can leave it blank.
+
+We'll then reach out with next steps.
+
+**📋 Copy this template, fill it out, and send "/basebuildernetworkinputform [your data]":**
+
+\`\`\`
+Email (required): 
+Full Name (required): 
+Builder Types (required - select all that apply): Advocate, Voices, Capital Allocator, Creator, Developer, Founder, Organizer, Student, Superuser, Other
+Building on Base (required): Yes / No, but I would like to get involved
+Location (required): East Asia & Pacific / Europe & Central Asia / Latin America / Middle East & North Africa / North America / South/Southeast Asia / East Africa / West Africa / Southern Africa
+Country (required): 
+Base Ambassador Interest: Yes / No
+Discord Username: 
+Telegram Username: 
+Twitter (X) Username: 
+Base App/Farcaster Username: 
+GitHub Link: 
+Relevant Links: 
+Base Core Team Contact: 
+Basename: 
+Wallet Address: 
+Additional Comments: 
+\`\`\`
+
+**💡 How to use:**
+1. Copy the template above
+2. Replace each field with your information  
+3. Type "/basebuildernetworkinputform" and paste your filled template
+4. Hit send!
+
+**Example:**
+\`\`\`
+Email: john@example.com
+Full Name: John Doe
+Builder Types: Developer, Founder
+Building on Base: Yes
+Location: North America
+Country: USA
+Base Ambassador Interest: Yes
+\`\`\`
+
+Ready to join the Base Builder Network? 🔵`
+
+    await ctx.reply(template)
+    return
+  }
+
+  try {
+    const builderData = parseBaseBuilderData(input)
+    
+    // Validate required fields
+    if (!builderData.email || !builderData.fullName || !builderData.builderTypes || !builderData.buildingOnBase || !builderData.location || !builderData.country) {
+      await ctx.reply(`❌ **Missing Required Fields!**
+
+Please ensure you provide:
+• Email (required)
+• Full Name (required)  
+• Builder Types (required)
+• Building on Base (required)
+• Location (required)
+• Country (required)
+
+Use /basebuildernetworkinputform to see the template again.`)
+      return
+    }
+
+    // Create base builder entry
+    const userId = ctx.from!.id.toString()
+    
+    // Check if user already submitted
+    const existingBuilder = await baseBuilderManager.getBaseBuilderByUserId(userId)
+    if (existingBuilder) {
+      await ctx.reply(`⚠️ **Already Submitted!**
+
+You've already submitted your Base Builder Network application on ${existingBuilder.createdAt.toDateString()}.
+
+**Your Application Details:**
+👤 **${existingBuilder.fullName}**
+📧 ${existingBuilder.email}
+🏗️ **Types:** ${existingBuilder.builderTypes.join(', ')}
+🌍 **Location:** ${existingBuilder.location}, ${existingBuilder.country}
+🚀 **Building on Base:** ${existingBuilder.buildingOnBase}
+
+If you need to update your information, please contact support.`)
+      return
+    }
+
+    const builder = await baseBuilderManager.createBaseBuilder(userId, builderData as Omit<BaseBuilder, 'id' | 'userId' | 'createdAt'>)
+    
+    const successMessage = `✅ **Base Builder Application Submitted!**
+
+🎉 Welcome to the Base Builder Network, **${builder.fullName}**!
+
+**Application Summary:**
+👤 **Name:** ${builder.fullName}
+📧 **Email:** ${builder.email}
+🏗️ **Builder Types:** ${builder.builderTypes.join(', ')}
+🌍 **Location:** ${builder.location}, ${builder.country}
+🚀 **Building on Base:** ${builder.buildingOnBase}
+${builder.baseAmbassador === 'Yes' ? '🎖️ **Ambassador Interest:** Yes' : ''}
+${builder.discordUsername ? `💬 **Discord:** ${builder.discordUsername}` : ''}
+${builder.telegramUsername ? `📱 **Telegram:** ${builder.telegramUsername}` : ''}
+${builder.twitterUsername ? `🐦 **Twitter:** ${builder.twitterUsername}` : ''}
+${builder.githubLink ? `💻 **GitHub:** ${builder.githubLink}` : ''}
+${builder.basename ? `🔵 **Basename:** ${builder.basename}` : ''}
+
+**What's Next:**
+• You'll hear back from the Base team with next steps
+• Access to exclusive community forums and programs
+• Builder network opportunities and support
+
+Thank you for being part of the Base ecosystem! 🔵`
+
+    await ctx.reply(successMessage)
+
+  } catch (error) {
+    console.error('Error processing base builder form:', error)
+    await ctx.reply(`❌ **Form Processing Error**
+
+There was an issue processing your application. Please check your format and try again.
+
+Use /basebuildernetworkinputform to see the template.
+
+**Common Issues:**
+• Make sure to include colons (:) after field names
+• Check that all required fields are filled
+• Ensure Builder Types are comma-separated`)
+  }
+})
+
 // Handle photo messages for selfies
 bot.on('message:photo', async (ctx) => {
   try {
@@ -1128,6 +1354,7 @@ async function setupBotCommands() {
       { command: 'export', description: '📤 Download contact data' },
       { command: 'selfie', description: '📸 Take selfie with contact' },
       { command: 'photos', description: '🖼️ View contact photos' },
+      { command: 'basebuildernetworkinputform', description: '🔵 Base Builder Network form' },
       { command: 'help', description: '❓ Command guide' }
     ])
     console.log('✅ Bot commands updated successfully!')
