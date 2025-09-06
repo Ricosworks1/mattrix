@@ -5,10 +5,12 @@
   "main": "bot.ts",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "echo 'No build step needed for bot'",
+    "start": "bun mattrix-pro.ts",
     "bot": "bun bot.ts",
     "mattrix": "bun mattrix-working.ts",
+    "mattrix-pro": "bun mattrix-pro.ts",
+    "mattrix-crm": "bun mattrix-crm.ts",
     "test-connection": "bun test-connection.ts"
   },
   "dependencies": {

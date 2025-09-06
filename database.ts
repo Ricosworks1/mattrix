@@ -1,4 +1,14 @@
 import { Pool, PoolClient } from 'pg'
+import { config } from 'dotenv'
+
+// Ensure environment is loaded
+if (!process.env.DATABASE_URL) {
+  if (process.env.NODE_ENV === 'production') {
+    config({ path: '.env.production' })
+  } else {
+    config({ path: '.env.mattrix' })
+  }
+}
 
 // Database configuration
 let poolConfig: any = {
@@ -8,8 +18,8 @@ let poolConfig: any = {
   connectionTimeoutMillis: 10000, // Increased timeout for Railway
 }
 
-// Railway requires SSL for PostgreSQL
-if (process.env.NODE_ENV === 'production') {
+// Railway requires SSL for PostgreSQL (both production and development)
+if (process.env.DATABASE_URL?.includes('railway')) {
   poolConfig.ssl = {
     rejectUnauthorized: false
   }
