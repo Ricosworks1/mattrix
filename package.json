@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "echo 'No build step needed for bot'",
-    "start": "bun mattrix-pro.ts",
+    "start": "bun bot.ts",
     "bot": "bun bot.ts",
     "mattrix": "bun mattrix-working.ts",
     "mattrix-pro": "bun mattrix-pro.ts",
