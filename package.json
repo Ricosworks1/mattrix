@@ -12,7 +12,8 @@
     "mattrix": "bun mattrix-working.ts",
     "mattrix-pro": "bun mattrix-pro.ts",
     "mattrix-crm": "bun mattrix-crm.ts",
-    "test-connection": "bun test-connection.ts"
+    "test-connection": "bun test-connection.ts",
+    "test-hybrid": "bun test-hybrid.ts"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.19",
@@ -20,20 +21,26 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "golem-base-sdk": "^0.1.16",
     "grammy": "^1.25.0",
     "next": "^15.5.2",
     "pg": "^8.11.3",
+    "pinata": "^2.5.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "tslib": "^2.8.1",
+    "tslog": "^4.9.3",
     "viem": "^2.37.3",
     "wagmi": "^2.16.9"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
+    "@types/bun": "^1.2.21",
+    "@types/node": "^24.3.1",
     "@types/pg": "^8.10.9",
     "@types/react": "19.1.12",
-    "typescript": "^5.5.0"
+    "typescript": "^5.9.2"
   }
 }
