@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ['bun']
+
+[phases.install]
+cmds = ['bun install']
+
+[phases.build]
+cmds = ['echo "No build step needed"']
+
+[start]
+cmd = 'bun bot.ts'
