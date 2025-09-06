@@ -276,7 +276,7 @@ export class DatabaseContactManager {
     try {
       const query = 'DELETE FROM contacts WHERE user_id = $1 AND id = $2'
       const result = await client.query(query, [userId, contactId])
-      return result.rowCount > 0
+      return result.rowCount !== null && result.rowCount > 0
     } catch (error) {
       console.error('❌ Delete contact error:', error)
       throw error
@@ -336,9 +336,8 @@ export class DatabaseContactManager {
         userId, 
         contactId
       ]
-      
       const result = await client.query(query, values)
-      return result.rowCount > 0
+      return result.rowCount !== null && result.rowCount > 0
     } catch (error) {
       console.error('❌ Add photo error:', error)
       throw error

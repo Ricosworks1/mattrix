@@ -1,7 +1,7 @@
 import { config } from 'dotenv'
 import express from 'express'
 import cors from 'cors'
-import { DatabaseContactManager, BaseBuilderManager, Contact, BaseBuilder } from './database'
+import { hybridStorage, initializeDatabase, Contact, BaseBuilder } from './hybrid-storage'
 
 // Load environment
 if (process.env.NODE_ENV === 'production') {
@@ -17,9 +17,9 @@ const port = process.env.API_PORT || 3001
 app.use(cors())
 app.use(express.json())
 
-// Initialize database managers
-const contactManager = new DatabaseContactManager()
-const baseBuilderManager = new BaseBuilderManager()
+// Initialize hybrid storage manager
+const contactManager = hybridStorage
+const baseBuilderManager = hybridStorage
 
 // Helper function to parse contact data (same as bot.ts)
 function parseContactData(text: string): Partial<Contact> {
@@ -207,11 +207,39 @@ app.post('/api/base-builders', async (req, res) => {
       })
     }
 
-    const builder = await baseBuilderManager.createBaseBuilder(userId, builderData)
+    const builder = await baseBuilderManager.addBaseBuilder(userId, builderData)
     res.json({ success: true, data: builder })
   } catch (error) {
     console.error('API Error:', error)
     res.status(500).json({ success: false, error: 'Failed to submit application' })
+  }
+})
+
+// POST /api/verify - Verify data integrity
+app.post('/api/verify', async (req, res) => {
+  try {
+    const { userId, contactId, dataType = 'contact' } = req.body
+    
+    if (!userId || !contactId) {
+      return res.status(400).json({ success: false, error: 'userId and contactId required' })
+    }
+
+    const verification = await contactManager.verifyDataIntegrity(userId, dataType, contactId)
+    res.json({ success: true, data: verification })
+  } catch (error) {
+    console.error('API Error:', error)
+    res.status(500).json({ success: false, error: 'Failed to verify data integrity' })
+  }
+})
+
+// GET /api/status - System health check
+app.get('/api/status', async (req, res) => {
+  try {
+    const status = await contactManager.getSystemStatus()
+    res.json({ success: true, data: status })
+  } catch (error) {
+    console.error('API Error:', error)
+    res.status(500).json({ success: false, error: 'Failed to get system status' })
   }
 })
 
@@ -229,6 +257,8 @@ app.listen(port, () => {
   console.log(`  GET  /api/contacts/search/:userId?q=query - Search contacts`)
   console.log(`  GET  /api/stats/:userId - Get statistics`)
   console.log(`  POST /api/base-builders - Submit Base Builder form`)
+  console.log(`  POST /api/verify - Verify data integrity`)
+  console.log(`  GET  /api/status - System health check`)
   console.log(`  GET  /api/health - Health check`)
 })
 

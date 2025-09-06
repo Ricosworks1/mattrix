@@ -4,7 +4,7 @@ import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import express from 'express'
 import cors from 'cors'
-import { DatabaseContactManager, BaseBuilderManager, initializeDatabase, Contact, BaseBuilder } from './database'
+import { hybridStorage, initializeDatabase, Contact, BaseBuilder } from './hybrid-storage'
 
 // Load environment
 if (process.env.NODE_ENV === 'production') {
@@ -13,9 +13,9 @@ if (process.env.NODE_ENV === 'production') {
   config({ path: '.env.mattrix' })
 }
 
-// Initialize database managers
-const contactManager = new DatabaseContactManager()
-const baseBuilderManager = new BaseBuilderManager()
+// Initialize hybrid storage manager
+const contactManager = hybridStorage
+const baseBuilderManager = hybridStorage
 const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!)
 
 // Helper function to parse contact data from template
@@ -909,6 +909,156 @@ bot.command('view', async (ctx) => {
   }
 })
 
+// VERIFY command - verify data integrity
+bot.command('verify', async (ctx) => {
+  const input = ctx.match as string
+
+  if (!input?.trim()) {
+    await ctx.reply(`🔒 **Data Integrity Verification**
+
+**Usage:** \`/verify [contact name]\`
+
+**Examples:**
+• \`/verify John Doe\` - Verify John's data integrity
+• \`/verify Sarah\` - Check Sarah's data hash
+
+**What it does:**
+✅ Compares PostgreSQL data with GolemDB hash
+✅ Verifies IPFS image hashes (if available)
+✅ Ensures data hasn't been tampered with
+✅ Provides cryptographic proof of integrity
+
+**Perfect for:**
+🔒 Data security audits
+🛡️ Integrity verification
+🔍 Tamper detection
+📊 System health checks
+
+Trust, but verify! 🔐`, { parse_mode: 'Markdown' })
+    return
+  }
+
+  try {
+    const userId = ctx.from!.id.toString()
+    const contacts = await contactManager.getUserContacts(userId)
+    
+    if (contacts.length === 0) {
+      await ctx.reply('📭 No contacts found to verify!')
+      return
+    }
+
+    // Find matching contact
+    const searchTerm = input.toLowerCase()
+    const matchingContacts = contacts.filter(contact => 
+      contact.name.toLowerCase().includes(searchTerm)
+    )
+
+    if (matchingContacts.length === 0) {
+      await ctx.reply(`❌ No contact found matching "${input}".`)
+      return
+    }
+
+    if (matchingContacts.length > 1) {
+      let response = `🔍 **Multiple contacts found for "${input}":**\n\n`
+      matchingContacts.slice(0, 5).forEach((contact, index) => {
+        response += `${index + 1}. **${contact.name}**\n`
+        if (contact.company) response += `   📢 ${contact.company}\n`
+        response += '\n'
+      })
+      response += `Please be more specific with the name.`
+      
+      await ctx.reply(response, { parse_mode: 'Markdown' })
+      return
+    }
+
+    // Single match found - verify integrity
+    const contact = matchingContacts[0]
+    
+    await ctx.reply(`🔍 **Verifying data integrity for ${contact.name}...**\n\n⏳ Checking PostgreSQL vs GolemDB hashes...`, { parse_mode: 'Markdown' })
+
+    try {
+      const verification = await contactManager.verifyDataIntegrity(userId, 'contact', contact.id)
+      
+      let message = `🔒 **Data Integrity Report for ${contact.name}**\n\n`
+      
+      if (verification.isValid) {
+        message += `✅ **Status:** VERIFIED\n`
+        message += `🛡️ **Integrity:** Data is authentic and unmodified\n`
+      } else {
+        message += `❌ **Status:** COMPROMISED\n`
+        message += `⚠️ **Warning:** Data may have been tampered with!\n`
+      }
+      
+      message += `\n📊 **Hash Details:**\n`
+      message += `🔐 **Current Hash:** \`${verification.currentHash.substring(0, 16)}...\`\n`
+      message += `💾 **Stored Hash:** \`${verification.storedHash.substring(0, 16)}...\`\n`
+      message += `🔍 **Match:** ${verification.isValid ? '✅ YES' : '❌ NO'}\n`
+
+      // Verify IPFS hash if photo exists
+      if (contact.photoFileId) {
+        try {
+          const ipfsVerification = await contactManager.verifyIPFSHash(contact.photoFileId)
+          message += `\n📁 **IPFS Image Verification:**\n`
+          message += `🖼️ **Status:** ${ipfsVerification.isValid ? '✅ VERIFIED' : '❌ COMPROMISED'}\n`
+          message += `📎 **IPFS Hash:** \`${contact.photoFileId.substring(0, 16)}...\`\n`
+        } catch (ipfsError) {
+          message += `\n📁 **IPFS Image:** ⚠️ Could not verify (hash not found in GolemDB)\n`
+        }
+      }
+
+      message += `\n🔐 **Powered by:**\n• PostgreSQL for data storage\n• GolemDB for hash verification\n• SHA256 cryptographic hashing`
+
+      await ctx.reply(message, { parse_mode: 'Markdown' })
+
+    } catch (verifyError) {
+      console.error('Verification error:', verifyError)
+      await ctx.reply(`❌ **Verification Failed**\n\nCould not verify data integrity. This might mean:\n• Contact was created before verification system\n• GolemDB connection issues\n• Hash not found in blockchain\n\nContact data in PostgreSQL is still available.`, { parse_mode: 'Markdown' })
+    }
+
+  } catch (error) {
+    console.error('Error in verify command:', error)
+    await ctx.reply('❌ Error processing verification request.')
+  }
+})
+
+// STATUS command - system health check
+bot.command('status', async (ctx) => {
+  try {
+    await ctx.reply('🔍 **Checking system status...**\n\n⏳ Testing all storage systems...', { parse_mode: 'Markdown' })
+    
+    const status = await contactManager.getSystemStatus()
+    
+    let message = `🌐 **Mattrix System Status**\n\n`
+    
+    message += `📊 **Storage Systems:**\n`
+    message += `🐘 **PostgreSQL:** ${status.postgresql ? '✅ Online' : '❌ Offline'}\n`
+    message += `🌐 **GolemDB:** ${status.golemdb ? '✅ Connected' : '❌ Disconnected'}\n`
+    message += `📁 **IPFS (Pinata):** ${status.ipfs ? '✅ Available' : '⚠️ Not configured'}\n`
+    
+    if (status.golemInfo) {
+      message += `\n🔐 **GolemDB Details:**\n`
+      message += `📍 **Address:** \`${status.golemInfo.ownerAddress.substring(0, 10)}...\`\n`
+      message += `💰 **Balance:** ${status.golemInfo.balance}\n`
+    }
+    
+    message += `\n⏰ **Last Check:** ${new Date(status.timestamp).toLocaleString()}\n`
+    
+    // Overall health
+    const allHealthy = status.postgresql && status.golemdb
+    message += `\n🎯 **Overall Status:** ${allHealthy ? '🟢 Healthy' : '🟡 Degraded'}\n`
+    
+    if (!status.ipfs) {
+      message += `\n💡 **Note:** IPFS not configured. Set PINATA_JWT for image storage.`
+    }
+
+    await ctx.reply(message, { parse_mode: 'Markdown' })
+
+  } catch (error) {
+    console.error('Error getting system status:', error)
+    await ctx.reply('❌ **System Status Check Failed**\n\nUnable to retrieve system status. Please check:\n• Database connections\n• GolemDB configuration\n• Environment variables', { parse_mode: 'Markdown' })
+  }
+})
+
 // PHOTOS command - view contact photos
 bot.command('photos', async (ctx) => {
   try {
@@ -956,10 +1106,16 @@ bot.command('help', async (ctx) => {
 /delete [name] - Delete a contact
 /stats - Your networking statistics
 
-**🤳 SELFIE FEATURES**
-/selfie [name] - Link conference selfie to contact
-/photos - View all your conference selfies
-/export - Download your contact data
+ **🤳 SELFIE FEATURES**
+ /selfie [name] - Link conference selfie to contact
+ /photos - View all your conference selfies
+ 
+ **🔒 VERIFICATION FEATURES**
+ /verify [name] - Verify contact data integrity
+ /status - Check system health & storage status
+ 
+ **📤 DATA MANAGEMENT**
+ /export - Download your contact data
 
 **🔍 SEARCH EXAMPLES**
 /search John Doe - Find by name
@@ -981,6 +1137,9 @@ bot.command('help', async (ctx) => {
 • Priority-based contact organization
 • CSV export for CRM integration
 • Advanced search across all fields
+• Hybrid storage: PostgreSQL + IPFS + GolemDB
+• Cryptographic data integrity verification
+• Decentralized image storage via IPFS
 
 Ready to build your empire? Start with /add! 👑`
 
@@ -1087,7 +1246,7 @@ If you need to update your information, please contact support.`)
       return
     }
 
-    const builder = await baseBuilderManager.createBaseBuilder(userId, builderData as Omit<BaseBuilder, 'id' | 'userId' | 'createdAt'>)
+    const builder = await baseBuilderManager.addBaseBuilder(userId, builderData as Omit<BaseBuilder, 'id' | 'userId' | 'createdAt'>)
     
     const successMessage = `✅ **Base Builder Application Submitted!**
 
@@ -1153,19 +1312,25 @@ bot.on('message:photo', async (ctx) => {
     const photo = ctx.message.photo[ctx.message.photo.length - 1]
     const fileId = photo.file_id
 
-    // Store photo info in contact via Golem database
-    const success = await contactManager.addPhotoToContact(userId, selfieContext.contactId, {
-      photoFileId: fileId,
-      photoTakenAt: new Date(),
-      hasFacialData: false // Will be true when we add facial recognition
-    })
+    // Download the photo from Telegram
+    const file = await ctx.api.getFile(fileId)
+    const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`
+    
+    // Fetch the image buffer
+    const response = await fetch(fileUrl)
+    const imageBuffer = Buffer.from(await response.arrayBuffer())
+
+    // Store photo via hybrid storage (PostgreSQL + IPFS + GolemDB hash)
+    const success = await contactManager.addPhotoToContact(userId, selfieContext.contactId, imageBuffer)
 
     if (success) {
       await ctx.reply(
         `✅ **Selfie saved successfully!** 🤳\n\n` +
         `📸 **Photo linked to:** ${selfieContext.contactName}\n` +
         `⏰ **Taken:** ${new Date().toLocaleString()}\n` +
-        `🌐 **Stored in:** Decentralized database via Golem\n` +
+        `🌐 **Stored in:** PostgreSQL + IPFS + GolemDB\n` +
+        `📁 **IPFS:** Decentralized image storage\n` +
+        `🔒 **GolemDB:** Hash verification for integrity\n` +
         `🔮 **Ready for:** Facial recognition (coming soon)\n\n` +
         `This conference memory is now part of your Mattrix network!`,
         { parse_mode: 'Markdown' }
@@ -1356,6 +1521,8 @@ async function setupBotCommands() {
       { command: 'export', description: '📤 Download contact data' },
       { command: 'selfie', description: '📸 Take selfie with contact' },
       { command: 'photos', description: '🖼️ View contact photos' },
+      { command: 'verify', description: '🔒 Verify data integrity' },
+      { command: 'status', description: '🌐 System health check' },
       { command: 'base_builders_network', description: '🔵 Base Builders Network' },
       { command: 'help', description: '❓ Command guide' }
     ])
