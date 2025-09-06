@@ -159,6 +159,63 @@ Send: \`/add Name: John Doe...\``
   }
 
   try {
+    // Handle quick format: /add Name, Company, Email OR just /add Name
+    if (input.includes(',') && !input.includes(':')) {
+      const parts = input.split(',').map(p => p.trim())
+      const [name, company, email] = parts
+      
+      if (name && name.length > 0) {
+        const quickContact: Contact = {
+          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userId: ctx.from!.id.toString(),
+          name,
+          company: company || undefined,
+          email: email || undefined,
+          priority: 'medium',
+          createdAt: new Date(),
+          source: 'Telegram Bot - Quick Add'
+        }
+
+        await contactManager.addContact(quickContact)
+        
+        await ctx.reply(
+          `✅ **Quick Contact Added!**\n\n` +
+          `**Name:** ${quickContact.name}\n` +
+          `**Company:** ${quickContact.company || 'Not specified'}\n` +
+          `**Email:** ${quickContact.email || 'Not specified'}\n\n` +
+          `Use /add with the full template to add more details!`
+        )
+        return
+      }
+    }
+
+    // Handle simple name-only format: /add John Doe
+    if (!input.includes(':') && !input.includes(',')) {
+      const name = input.trim()
+      if (name && name.length > 0) {
+        const simpleContact: Contact = {
+          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userId: ctx.from!.id.toString(),
+          name,
+          priority: 'medium',
+          createdAt: new Date(),
+          source: 'Telegram Bot - Simple Add'
+        }
+
+        await contactManager.addContact(simpleContact)
+        
+        await ctx.reply(
+          `✅ **Contact Added!**\n\n` +
+          `**Name:** ${simpleContact.name}\n` +
+          `**Priority:** ${simpleContact.priority}\n\n` +
+          `Use \`/view ${name}\` to see details or \`/add\` with full template for more info!`,
+          { parse_mode: 'Markdown' }
+        )
+        return
+      }
+    }
+
+    // Handle full template format
     const contactData = parseContactData(input)
     
     if (!contactData.name) {
