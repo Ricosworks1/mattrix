@@ -1702,5 +1702,6 @@ function startAPIServer() {
   app.listen(port, () => {
     console.log(`🚀 Mattrix API server running on port ${port}`)
     console.log(`📱 Mini App can connect to: https://mattrix-production.up.railway.app/api`)
+    console.log(`🔧 Deployment triggered: ${new Date().toISOString()}`)
   })
 }
