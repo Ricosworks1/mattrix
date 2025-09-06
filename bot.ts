@@ -8,11 +8,7 @@ import cors from 'cors'
 import { hybridStorage, initializeDatabase, Contact, BaseBuilder } from './hybrid-storage'
 
 // Load environment
-if (process.env.NODE_ENV === 'production') {
-  config({ path: '.env.production' })
-} else {
-  config({ path: '.env.mattrix' })
-}
+config() // This will automatically load .env file
 
 // Initialize hybrid storage manager
 const contactManager = hybridStorage
