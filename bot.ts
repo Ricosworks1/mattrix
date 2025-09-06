@@ -2,6 +2,8 @@ import { config } from 'dotenv'
 import { Bot, Context, InlineKeyboard, InputFile } from 'grammy'
 import { writeFileSync, readFileSync, existsSync } from 'fs'
 import { join } from 'path'
+import express from 'express'
+import cors from 'cors'
 import { DatabaseContactManager, BaseBuilderManager, initializeDatabase, Contact, BaseBuilder } from './database'
 
 // Load environment
@@ -1380,5 +1382,128 @@ bot.start({
     
     // Set up the command list
     await setupBotCommands()
+    
+    // Start API server for Mini App
+    startAPIServer()
   }
 })
+
+// API Server for Mini App Integration
+function startAPIServer() {
+  const app = express()
+  const port = process.env.PORT || 3001
+
+  // Middleware
+  app.use(cors())
+  app.use(express.json())
+
+  // Helper function to parse contact data (same as above)
+  function parseContactData(text: string): Partial<Contact> {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line)
+    const contact: Partial<Contact> = {}
+
+    for (const line of lines) {
+      const [key, ...valueParts] = line.split(':')
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join(':').trim()
+        const lowerKey = key.toLowerCase().trim()
+
+        switch (lowerKey) {
+          case 'name': contact.name = value; break
+          case 'position': case 'title': case 'job': contact.position = value; break
+          case 'company': case 'organization': contact.company = value; break
+          case 'email': contact.email = value; break
+          case 'phone': case 'mobile': contact.phone = value; break
+          case 'linkedin': contact.linkedin = value.startsWith('http') ? value : `https://linkedin.com/in/${value}`; break
+          case 'github': contact.github = value.startsWith('http') ? value : `https://github.com/${value}`; break
+          case 'telegram': contact.telegram = value.startsWith('@') ? value : `@${value}`; break
+          case 'lens': contact.lens = value.includes('.') ? value : `${value}.lens`; break
+          case 'farcaster': contact.farcaster = value.startsWith('@') ? value : `@${value}`; break
+          case 'ens': contact.ens = value.includes('.') ? value : `${value}.eth`; break
+          case 'location': contact.location = value; break
+          case 'goal': contact.goal = value; break
+          case 'notes': contact.notes = value; break
+          case 'tags': contact.tags = value.split(',').map(tag => tag.trim()).filter(tag => tag); break
+          case 'priority': if (['high', 'medium', 'low'].includes(value.toLowerCase())) contact.priority = value.toLowerCase() as 'high' | 'medium' | 'low'; break
+          case 'source': contact.source = value; break
+        }
+      }
+    }
+    return contact
+  }
+
+  // API Routes
+  app.get('/api/contacts/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params
+      const contacts = await contactManager.getUserContacts(userId)
+      res.json({ success: true, data: contacts })
+    } catch (error) {
+      console.error('API Error:', error)
+      res.status(500).json({ success: false, error: 'Failed to fetch contacts' })
+    }
+  })
+
+  app.post('/api/contacts', async (req, res) => {
+    try {
+      const { userId, contactData } = req.body
+      const parsedData = typeof contactData === 'string' ? parseContactData(contactData) : contactData
+      
+      if (!parsedData.name) {
+        return res.status(400).json({ success: false, error: 'Name is required' })
+      }
+      if (!parsedData.priority) parsedData.priority = 'medium'
+
+      const contact = await contactManager.addContact(userId, parsedData)
+      res.json({ success: true, data: contact })
+    } catch (error) {
+      console.error('API Error:', error)
+      res.status(500).json({ success: false, error: 'Failed to add contact' })
+    }
+  })
+
+  app.get('/api/contacts/search/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params
+      const { q: query } = req.query
+      if (!query) return res.status(400).json({ success: false, error: 'Query required' })
+      
+      const contacts = await contactManager.searchContacts(userId, query as string)
+      res.json({ success: true, data: contacts })
+    } catch (error) {
+      console.error('API Error:', error)
+      res.status(500).json({ success: false, error: 'Failed to search contacts' })
+    }
+  })
+
+  app.get('/api/stats/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params
+      const contacts = await contactManager.getUserContacts(userId)
+      
+      const stats = {
+        totalContacts: contacts.length,
+        highPriority: contacts.filter(c => c.priority === 'high').length,
+        mediumPriority: contacts.filter(c => c.priority === 'medium').length,
+        lowPriority: contacts.filter(c => c.priority === 'low').length,
+        withPhotos: contacts.filter(c => c.photoPath || c.photoFileId).length,
+        companies: [...new Set(contacts.map(c => c.company).filter(Boolean))].length,
+        locations: [...new Set(contacts.map(c => c.location).filter(Boolean))].length,
+      }
+      
+      res.json({ success: true, data: stats })
+    } catch (error) {
+      console.error('API Error:', error)
+      res.status(500).json({ success: false, error: 'Failed to get stats' })
+    }
+  })
+
+  app.get('/api/health', (req, res) => {
+    res.json({ success: true, message: 'Mattrix API is running', timestamp: new Date().toISOString() })
+  })
+
+  app.listen(port, () => {
+    console.log(`🚀 Mattrix API server running on port ${port}`)
+    console.log(`📱 Mini App can connect to: https://mattrix-production.up.railway.app/api`)
+  })
+}
