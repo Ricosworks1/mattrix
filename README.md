@@ -8,6 +8,8 @@
 
 Mattrix is a decentralized business networking CRM that helps you manage contacts from conferences, events, and business meetings. Think of it as your digital business card holder that never gets lost and is secured by blockchain technology.
 
+Find more on our website: https://connect-vision-ai.lovable.app/
+
 ### 🎯 Core Purpose
 - Track contacts you meet at conferences and events
 - Store business information safely and securely
