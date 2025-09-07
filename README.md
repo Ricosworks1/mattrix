@@ -17,6 +17,33 @@ Find more on our website: https://connect-vision-ai.lovable.app/
 - Export data for traditional CRM systems
 - Verify data integrity using blockchain technology
 
+## 🏆 Bounty Solutions
+
+### 🔹 GolemDB Bounty
+We integrate **GolemDB** by anchoring trustless, privacy-preserving proofs:
+- **Contact details** → stored in Postgres, but a **SHA-256 hash** is anchored into GolemDB.  
+- **Contact photo** → stored in **IPFS** (to save GolemDB storage space).  
+- Only the **SHA-256 hash of the photo** is written into GolemDB, ensuring privacy and verifiability.  
+
+✅ This design ensures minimal storage on GolemDB, while preserving **auditability, scalability, and data integrity**. We solve the problem of fake contacts that are typically used as fraud in marketing or investment. In fact, we have been ourselves scamed by a fakedm invetor trying to steal our money! 
+
+---
+
+### 🔹 Base Bounty
+By deploying the **Mattrix Bot** inside the **Base ecosystem**, we:
+- Transformed the **Base Builder Network onboarding** from a clunky Google Sheet → into a **sleek mini-app**.  
+- Builders now **sign up directly in the Base app**, with data flowing instantly into a **secure Base-owned database**.  
+- This onboarding is now **Web3-native**, **scalable**, and **professional**, showing how Base can replace outdated Web2 workflows.  
+
+🚀 A **game-changer for community growth** and a strong proof of Base’s developer ecosystem potential.  
+
+---
+
+### 🔹 ETH Warsaw Business Model Bounty
+We provided a **comprehensive business analysis** demonstrating the **profitability, scalability, and adoption pathway** for Mattrix Bot & the Matrix vision.  
+
+📄 Full analysis: [Business Model Document](https://connect-vision-ai.lovable.app/)  
+
 ---
 
 ## 🏗️ System Architecture Overview
@@ -176,7 +203,7 @@ The Mattrix Mini App runs inside Coinbase's Base app and provides:
 2. Bot asks for contact template
 3. User fills template (Name, Company, Email, etc.)
 4. PostgreSQL stores contact data
-5. GolemDB creates verification hash
+5. We hash the contact detailes and store the hash on GolemDB
 6. User gets confirmation
 
 ### Taking a Selfie
@@ -342,7 +369,7 @@ NEYNAR_API_KEY=your_neynar_key
 - 📱 Mobile Apps - Native iOS and Android applications
 - 🤝 Team Collaboration - Share contacts across organizations
 - 📈 Analytics Dashboard - Advanced networking insights
-- 🔄 CRM Integrations - Direct sync with Salesforce, HubSpot
+- 🔄 CRM Integrations - Direct sync with Salesforce, HubSpot, nReach
 
 ---
 
@@ -355,35 +382,10 @@ Bounties: Golem DB, BASE, ETHWarsaw Business Model Bounty
 
 Find more content on our web page: https://connect-vision-ai.lovable.app/
 
-The deployed miniapp can be found here: https://mattrix-miniapp.vercel.app/ and it's repository here https://github.com/Ricosworks1/mattrix-miniapp.
+The deployed miniapp can be found here: https://mattrix-miniapp.vercel.app/ and it's repository here https://github.com/Ricosworks1/mattrix-miniapp. In order to visualize the mini app on coinbase, copy paste this link on the base app and enter -> then run the app and visualize it.
 ---
 
-## 🏆 Bounty Solutions
 
-### 🔹 GolemDB Bounty
-We integrate **GolemDB** by anchoring trustless, privacy-preserving proofs:
-- **Contact details** → stored in Postgres, but a **SHA-256 hash** is anchored into GolemDB.  
-- **Contact photo** → stored in **IPFS** (to save GolemDB storage space).  
-- Only the **SHA-256 hash of the photo** is written into GolemDB, ensuring privacy and verifiability.  
-
-✅ This design ensures minimal storage on GolemDB, while preserving **auditability, scalability, and data integrity**. We solve the problem of fake contacts that are typically used as fraud in marketing or investment. In fact, we have been ourselves scamed by a fakedm invetor trying to steal our money! 
-
----
-
-### 🔹 Base Bounty
-By deploying the **Mattrix Bot** inside the **Base ecosystem**, we:
-- Transformed the **Base Builder Network onboarding** from a clunky Google Sheet → into a **sleek mini-app**.  
-- Builders now **sign up directly in the Base app**, with data flowing instantly into a **secure Base-owned database**.  
-- This onboarding is now **Web3-native**, **scalable**, and **professional**, showing how Base can replace outdated Web2 workflows.  
-
-🚀 A **game-changer for community growth** and a strong proof of Base’s developer ecosystem potential.  
-
----
-
-### 🔹 ETH Warsaw Business Model Bounty
-We provided a **comprehensive business analysis** demonstrating the **profitability, scalability, and adoption pathway** for Mattrix Bot & the Matrix vision.  
-
-📄 Full analysis: [Business Model Document](https://connect-vision-ai.lovable.app/)  
 
 
 ## 🖼️ Demo
