@@ -6,7 +6,7 @@
 
 ## 📖 What is Mattrix?
 
-Mattrix is a decentralized business networking CRM that helps you manage contacts from conferences, events, and business meetings. Think of it as your digital business card holder that never gets lost and is secured by blockchain technology.
+Mattrix is a decentralized business networking CRM that helps you manage contacts from conferences, events, and business meetings. Think of it as your digital business card holder that never gets lost and is secured by blockchain technology. Privacy preserved!
 
 Find more on our website: https://connect-vision-ai.lovable.app/
 
@@ -366,7 +366,7 @@ We integrate **GolemDB** by anchoring trustless, privacy-preserving proofs:
 - **Contact photo** → stored in **IPFS** (to save GolemDB storage space).  
 - Only the **SHA-256 hash of the photo** is written into GolemDB, ensuring privacy and verifiability.  
 
-✅ This design ensures minimal storage on GolemDB, while preserving **auditability, scalability, and data integrity**.  
+✅ This design ensures minimal storage on GolemDB, while preserving **auditability, scalability, and data integrity**. We solve the problem of fake contacts that are typically used as fraud in marketing or investment. In fact, we have been ourselves scamed by a fakedm invetor trying to steal our money! 
 
 ---
 
