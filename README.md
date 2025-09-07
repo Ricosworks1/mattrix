@@ -397,6 +397,10 @@ git clone https://github.com/username/mattrix.git
 cd mattrix
 ```
 
+## Team member list
+
+Ricardo Mastrangelo, Alexandra Mikityuk, Akhil Nanavati, Leon ID 
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 (GPLv3).
