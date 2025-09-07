@@ -300,6 +300,7 @@ Priority: high
 
 ### Required for Bot Operation
 
+```bash
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 DATABASE_URL=postgresql://user:pass@host:port/db
 PRIVATE_KEY=your_golemdb_private_key
@@ -309,15 +310,17 @@ WS_URL=wss://ethwarsaw.holesky.golemdb.io/rpc/ws
 PINATA_JWT=your_pinata_jwt_token
 PINATA_GATEWAY=your_pinata_gateway
 NODE_ENV=production
+```
 
 
 ### Required for Mini App
 
+```bash
 JWT_SECRET=your_jwt_secret
 NEXT_PUBLIC_URL=https://your-miniapp.vercel.app
 NEXT_PUBLIC_MINIKIT_PROJECT_ID=your_project_id
 NEYNAR_API_KEY=your_neynar_key
-
+```
 
 ---
 
