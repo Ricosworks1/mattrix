@@ -385,14 +385,6 @@ Find more content on our web page: https://connect-vision-ai.lovable.app/
 The deployed miniapp can be found here: https://mattrix-miniapp.vercel.app/ and it's repository here https://github.com/Ricosworks1/mattrix-miniapp. In order to visualize the mini app on coinbase, copy paste this link on the base app and enter -> then run the app and visualize it.
 ---
 
-
-
-
-## 🖼️ Demo
-_(We will add screenshots here — e.g., `docs/demo.gif`)_
-
----
-
 ## ⚡ Installation
 
 Use this link to start using the bot
