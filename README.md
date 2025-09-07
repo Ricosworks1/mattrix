@@ -27,8 +27,8 @@ We integrate **GolemDB** by anchoring trustless, privacy-preserving proofs:
 
 ✅ This design ensures storage on GolemDB, while preserving **auditability, privacy, scalability, and data integrity**. We solve the problem of fake contacts that are typically used as fraud in marketing or investment. In fact, we have been ourselves scamed by a fakedm invetor trying to steal our money! 
 
+[Golem DB Block Explorer](https://explorer.ethwarsaw.holesky.golemdb.io/address/0x8b916003D0C8F1f468a720BA4Ab5EA9678bc6e61?tab=txs)
 
-**[Golem DB Block Explorer](https://explorer.ethwarsaw.holesky.golemdb.io/address/0x8b916003D0C8F1f468a720BA4Ab5EA9678bc6e61?tab=txs)**
 ---
 
 ### 🔹 Base Bounty
