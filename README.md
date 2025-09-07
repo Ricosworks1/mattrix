@@ -346,7 +346,6 @@ NEYNAR_API_KEY=your_neynar_key
 
 ---
 
-*Built with ❤️ for the Web3 community. Mattrix - Where networking meets the blockchain.*
 
 ## Track and bounties
 
@@ -356,8 +355,36 @@ Bounties: Golem DB, BASE, ETHWarsaw Business Model Bounty
 
 Find more content on our web page: https://connect-vision-ai.lovable.app/
 
-The miniapp can be found here: https://mattrix-miniapp.vercel.app/
+The deployed miniapp can be found here: https://mattrix-miniapp.vercel.app/ and it's repository here https://github.com/Ricosworks1/mattrix-miniapp.
 ---
+
+## 🏆 Bounty Solutions
+
+### 🔹 GolemDB Bounty
+We integrate **GolemDB** by anchoring trustless, privacy-preserving proofs:
+- **Contact details** → stored in Postgres, but a **SHA-256 hash** is anchored into GolemDB.  
+- **Contact photo** → stored in **IPFS** (to save GolemDB storage space).  
+- Only the **SHA-256 hash of the photo** is written into GolemDB, ensuring privacy and verifiability.  
+
+✅ This design ensures minimal storage on GolemDB, while preserving **auditability, scalability, and data integrity**.  
+
+---
+
+### 🔹 Base Bounty
+By deploying the **Mattrix Bot** inside the **Base ecosystem**, we:
+- Transformed the **Base Builder Network onboarding** from a clunky Google Sheet → into a **sleek mini-app**.  
+- Builders now **sign up directly in the Base app**, with data flowing instantly into a **secure Base-owned database**.  
+- This onboarding is now **Web3-native**, **scalable**, and **professional**, showing how Base can replace outdated Web2 workflows.  
+
+🚀 A **game-changer for community growth** and a strong proof of Base’s developer ecosystem potential.  
+
+---
+
+### 🔹 ETH Warsaw Business Model Bounty
+We provided a **comprehensive business analysis** demonstrating the **profitability, scalability, and adoption pathway** for Mattrix Bot & the Matrix vision.  
+
+📄 Full analysis: [Business Model Document](https://connect-vision-ai.lovable.app/)  
+
 
 ## 🖼️ Demo
 _(We will add screenshots here — e.g., `docs/demo.gif`)_
@@ -385,3 +412,5 @@ You may redistribute and/or modify it under the terms of the GPLv3 as published 
 ## Wallet
 
 Wallet address 0xEe6A64e370b6FbFF273C0301e523F578aba5fc0E
+
+*Built with ❤️ for the Web3 community. Mattrix - Where networking meets the blockchain.*
