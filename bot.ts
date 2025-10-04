@@ -1541,7 +1541,7 @@ bot.start({
       await initializeDatabase()
     } catch (error) {
       console.error('❌ Database initialization failed:', error)
-      process.exit(1)
+      // Continue without database - bot can still work with Golem storage
     }
     
     // Set up the command list
